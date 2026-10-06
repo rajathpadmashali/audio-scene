@@ -2,17 +2,19 @@ import librosa
 import numpy as np
 import scipy.signal
 
-def get_emotion_rate(emotion: str) -> float:
-    rates = {
-        "neutral": 0.92,
-        "happy": 1.02,
-        "sad": 0.84,
-        "angry": 1.04,
-        "fear": 1.06,
-        "surprise": 1.02,
-        "disgust": 0.90
-    }
-    return rates.get(emotion, 0.92)
+# ────────────────────────────────────────────────────────────────────
+# Emotion presets
+# ────────────────────────────────────────────────────────────────────
+# Rates kept close to 1.0 to minimize time-stretch robotic artifacts
+EMOTION_PRESETS = {
+    "neutral":  {"rate": 1.0,  "pitch": 0,    "gain": 0,  "extra": None},
+    "happy":    {"rate": 1.05, "pitch": 1.0,  "gain": 1,  "extra": None},
+    "sad":      {"rate": 0.9,  "pitch": -1.0, "gain": -2, "extra": "lp4000"},
+    "angry":    {"rate": 1.1,  "pitch": 0.5,  "gain": 2,  "extra": None},
+    "fear":     {"rate": 1.1,  "pitch": 1.0,  "gain": -1, "extra": None},
+    "surprise": {"rate": 1.05, "pitch": 2.0,  "gain": 1,  "extra": None},
+    "disgust":  {"rate": 0.95, "pitch": -0.5, "gain": 0,  "extra": None},
+}
 
 def apply_emotion_dsp(
     audio: np.ndarray,
@@ -21,46 +23,46 @@ def apply_emotion_dsp(
     gender_shift: float = 0.0,
     speaker_shift: float = 0.0,
 ) -> np.ndarray:
-    presets = {
-        "neutral":  {"pitch": 0, "gain": 0, "extra": None},
-        "happy":    {"pitch": 1, "gain": 0, "extra": None},
-        "sad":      {"pitch": -1, "gain": -2, "extra": "lp4k"},
-        "angry":    {"pitch": 0.5, "gain": 1, "extra": "softclip"},
-        "fear":     {"pitch": 1, "gain": -1, "extra": "tremolo"},
-        "surprise": {"pitch": 1, "gain": 1, "extra": None},
-        "disgust":  {"pitch": -0.5, "gain": 0, "extra": None}
-    }
+    """
+    Cleaned up DSP pipeline to minimize robotic artifacts and noise.
+    Removed pink noise and aggressive time stretching.
+    """
+    params = EMOTION_PRESETS.get(emotion, EMOTION_PRESETS["neutral"])
 
-    params = presets.get(emotion, presets["neutral"])
-
-    rate = get_emotion_rate(emotion)
-    if len(audio) and rate != 1.0:
+    # ── 1. Global time-stretch ──
+    # Time stretching introduces phase vocoder artifacts (robotic sound)
+    # We keep the rates very subtle to avoid this.
+    rate = params["rate"]
+    if len(audio) > 0 and rate != 1.0:
         audio = librosa.effects.time_stretch(audio, rate=rate)
 
+    # ── 2. Pitch shift ──
+    # Pitch shifting also introduces robotic artifacts. 
+    # n_fft=2048 helps preserve formants slightly better.
     pitch = params["pitch"] + gender_shift + speaker_shift
-    if len(audio) and pitch != 0:
-        audio = librosa.effects.pitch_shift(audio, sr=sr, n_steps=pitch)
+    if len(audio) > 0 and pitch != 0:
+        audio = librosa.effects.pitch_shift(
+            audio, sr=sr, n_steps=pitch, n_fft=2048
+        )
 
+    # ── 3. Emotion-specific effects ──
     extra = params["extra"]
-    if extra == "lp4k":
-        sos = scipy.signal.butter(4, 4000 / (sr / 2), "low", output="sos")
+    if extra == "lp4000":
+        # Low-pass filter for sadness (muffles the voice slightly)
+        freq = min(4000, sr * 0.45)
+        sos = scipy.signal.butter(4, freq / (sr / 2), "low", output="sos")
         padlen = min(3 * (2 * len(sos) + 1), max(0, len(audio) - 1))
         audio = scipy.signal.sosfiltfilt(sos, audio, padlen=padlen)
-    elif extra == "softclip":
-        drive = 1.15
-        audio = np.tanh(audio * drive)
-    elif extra == "tremolo":
-        t = np.arange(len(audio)) / sr
-        tremolo = 1.0 - 0.1 * (0.5 * (1.0 - np.cos(2 * np.pi * 6 * t)))
-        audio = audio * tremolo
-        
+
+    # ── 4. Gain adjustment ──
     gain_db = params["gain"]
     if gain_db != 0:
         gain_linear = 10 ** (gain_db / 20)
         audio = audio * gain_linear
 
+    # ── 5. Peak limiting ──
     peak = np.max(np.abs(audio)) if len(audio) else 0.0
-    if peak > 0.98:
-        audio = audio * (0.98 / peak)
+    if peak > 0.95:
+        audio = audio * (0.95 / peak)
 
     return audio.astype(np.float32, copy=False)

@@ -16,16 +16,19 @@ def parse_with_llm(script: str) -> SceneSpec:
     Convert this script to a JSON strictly following SceneSpec schema.
     Language must be 'en', 'hi', or 'kn'.
     Background_scene must be one of: {taxonomy_str}.
-    The script may start with 'Language: <en|hi|kn>' and 'Background: <ESC-50 label>'.
-    Dialogue lines may mark a speaker with [emotion] and [male|female] tags.
-    Preserve the requested background and explicit speaker emotions/genders.
+    
+    INSTRUCTIONS:
+    1. If a 'Context:' or 'Characters:' header exists, use it to infer character genders and the best background_scene.
+    2. Infer gender from character names if not explicitly stated.
+    3. Infer emotion from the dialogue text if not explicitly stated. **Crucial: Emotion must STRICTLY be one of: 'neutral', 'happy', 'sad', 'angry', 'fear', 'surprise', or 'disgust'. Do NOT use any other words like 'urgent' or 'concerned'.**
+    4. Set 'pause_after_ms' intelligently based on punctuation (e.g. 200ms for comma, 500ms for period, 900ms for ellipsis, +200ms if the speaker changes in the next line).
     
     Format example:
     {{
       "language": "en",
       "background_scene": "rain",
       "dialogues": [
-        {{"idx": 0, "speaker": "male_1", "gender": "male", "text": "Hello", "emotion": "neutral", "pause_after_ms": 300}}
+        {{"idx": 0, "speaker": "male_1", "gender": "male", "text": "Hello", "emotion": "neutral", "pause_after_ms": 500}}
       ]
     }}
     

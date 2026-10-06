@@ -48,8 +48,19 @@ def mix_scene(scene: SceneSpec, tts_results: list[TTSResult], ambient_path: str 
     timeline = []
     current_time = 0.0
     speech_parts = []
+    
+    fade_len = int(sr * 0.02) # 20ms fade
+    fade_in = np.linspace(0, 1, fade_len)
+    fade_out = np.linspace(1, 0, fade_len)
+    
     for d, res in zip(scene.dialogues, tts_results):
         audio, _ = librosa.load(res.wav_path, sr=sr, mono=True)
+        
+        # Apply fade in/out to remove boundary clicks
+        if len(audio) > 2 * fade_len:
+            audio[:fade_len] *= fade_in
+            audio[-fade_len:] *= fade_out
+            
         speech_parts.append(audio)
         timeline.append({"idx": res.idx, "start": current_time, "end": current_time + res.duration_s})
         current_time += res.duration_s

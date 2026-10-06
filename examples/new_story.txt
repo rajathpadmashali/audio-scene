@@ -1,0 +1,8 @@
+Context: A tense moment in an abandoned space station.
+Characters: Sarah (female commander), John (male engineer), AI (female computer)
+
+Sarah: John, report our status immediately. We are losing power.
+John: I'm trying! The main reactor is completely offline.
+AI: Warning. Oxygen levels are dropping rapidly.
+Sarah: We need to manually override the airlocks. Let's move!
+John: Right behind you. I hope this works.

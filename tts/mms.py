@@ -35,7 +35,7 @@ def generate_tts(
         raise ValueError(f"No TTS model configured for language '{lang}' and voice '{gender}'.")
 
     hash_str = hashlib.sha256(
-        f"v3|{model_id}|{text}|{lang}|{gender}|{emotion}|{speaker}".encode("utf-8")
+        f"v5|{model_id}|{text}|{lang}|{gender}|{emotion}|{speaker}".encode("utf-8")
     ).hexdigest()
     wav_path = DATA_DIR / f"tts_cache_{hash_str}.wav"
     
@@ -61,11 +61,17 @@ def generate_tts(
     gender_models = TTS_MODELS.get(lang, {})
     gender_shift = 0.0
     if gender_models.get("male") == gender_models.get("female"):
-        gender_shift = 2.0 if gender == "female" else -2.0
+        # The base MMS model for English actually has a median pitch of ~86 Hz (Male).
+        # We must pitch shift UP significantly (+4.0) to make it sound female, as per the spec.
+        # Male uses the base voice (0.0).
+        gender_shift = 4.0 if gender == "female" else 0.0
+    
     speaker_shift = 0.0
     if speaker:
         speaker_value = hashlib.sha256(speaker.encode("utf-8")).digest()[0] / 255
-        speaker_shift = (speaker_value - 0.5) * 1.2
+        # Reduce unique speaker variance scale to avoid severe distortion
+        speaker_shift = (speaker_value - 0.5) * 0.8
+        
     output = apply_emotion_dsp(
         output,
         sr,
