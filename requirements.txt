@@ -1,0 +1,16 @@
+torch
+transformers
+uroman
+librosa
+soundfile
+pyloudnorm
+pydub
+pydantic
+groq
+gradio
+scikit-learn
+matplotlib
+pytest
+datasets
+accelerate
+python-dotenv

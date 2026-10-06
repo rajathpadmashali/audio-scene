@@ -1,0 +1,6 @@
+Language: en
+Background: rain
+
+Narrator [neutral] [female]: Rain tapped against the windows while the old house settled in the dark.
+Maya [fear] [female]: Wait... did you hear footsteps upstairs?
+Arun [happy] [male]: I hear them. Stay close; we'll check together.

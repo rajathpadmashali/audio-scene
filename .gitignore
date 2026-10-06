@@ -1,0 +1,23 @@
+# Virtual Environments
+venv/
+env/
+.env
+
+# Cache and Compiled Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Datasets and Generated Outputs
+data/
+*.wav
+*.json
+output.wav
+final.wav
+
+# Large Model Weights
+models/
+
+# OS Files
+.DS_Store
+Thumbs.db
