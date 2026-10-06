@@ -14,3 +14,8 @@ pytest
 datasets
 accelerate
 python-dotenv
+numpy
+pandas
+scipy
+torchvision
+edge-tts
