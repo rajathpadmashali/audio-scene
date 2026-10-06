@@ -29,21 +29,9 @@ def apply_emotion_dsp(
     """
     params = EMOTION_PRESETS.get(emotion, EMOTION_PRESETS["neutral"])
 
-    # ── 1. Global time-stretch ──
-    # Time stretching introduces phase vocoder artifacts (robotic sound)
-    # We keep the rates very subtle to avoid this.
-    rate = params["rate"]
-    if len(audio) > 0 and rate != 1.0:
-        audio = librosa.effects.time_stretch(audio, rate=rate)
-
-    # ── 2. Pitch shift ──
-    # Pitch shifting also introduces robotic artifacts. 
-    # n_fft=2048 helps preserve formants slightly better.
-    pitch = params["pitch"] + gender_shift + speaker_shift
-    if len(audio) > 0 and pitch != 0:
-        audio = librosa.effects.pitch_shift(
-            audio, sr=sr, n_steps=pitch, n_fft=2048
-        )
+    # ── 1. & 2. Time-stretch and Pitch shift removed ──
+    # Emotion rate and pitch are now handled natively via the TTS engine 
+    # (e.g. Edge-TTS SSML) to avoid phase-vocoder robotic artifacts.
 
     # ── 3. Emotion-specific effects ──
     extra = params["extra"]

@@ -1,13 +1,23 @@
 import gradio as gr
 import os
-from parser import parse_script
+from parser import parse_script, generate_script_from_prompt
 from tts import generate_tts
 from ambient import get_ambient_clip, get_music_clip
 from mixer.mix import mix_scene
+from config import ESC50_TAXONOMY
 
-def process_ui(script_text: str, mode: str, add_music: bool):
+def process_ui(script_text: str, mode: str, add_music: bool, lang_override: str, bg_override: str):
     try:
         scene = parse_script(script_text, mode)
+        
+        # Override language if selected
+        if lang_override and lang_override != "auto":
+            scene.language = lang_override
+            
+        # Override background ambient if selected
+        if bg_override and bg_override != "auto":
+            scene.background_scene = bg_override
+            
         tts_results = []
         emotions = []
         
@@ -27,23 +37,104 @@ def process_ui(script_text: str, mode: str, add_music: bool):
     except Exception as e:
         return None, f"Error: {str(e)}"
 
-with gr.Blocks() as demo:
-    gr.Markdown("# Multilingual Audio Scene Generator")
+def process_auto(prompt: str, mode: str, add_music: bool, lang_override: str, bg_override: str):
+    try:
+        # Generate script from prompt
+        script = generate_script_from_prompt(prompt)
+        # Generate audio from script
+        audio_path, status = process_ui(script, mode, add_music, lang_override, bg_override)
+        return script, audio_path, status
+    except Exception as e:
+        return "", None, f"Error: {str(e)}"
+
+# Minimal UI Theme
+theme = gr.themes.Monochrome(
+    font=[gr.themes.GoogleFont("Inter"), "ui-sans-serif", "system-ui", "sans-serif"]
+)
+
+# Custom CSS for rainbow prompt box
+css = """
+.rainbow-box textarea {
+    border: 3px solid transparent !important;
+    background-image: linear-gradient(var(--input-background-fill, var(--background-fill-primary)), var(--input-background-fill, var(--background-fill-primary))), linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet) !important;
+    background-origin: border-box !important;
+    background-clip: padding-box, border-box !important;
+    animation: rainbow 5s linear infinite !important;
+    color: var(--body-text-color) !important;
+}
+@keyframes rainbow {
+    0% { filter: hue-rotate(0deg); }
+    100% { filter: hue-rotate(360deg); }
+}
+"""
+
+with gr.Blocks(title="Audio Scene Generator", css=css) as demo:
+    gr.Markdown(
+        """
+        # Multilingual Audio Scene Generator
+        Bring your scripts to life with TTS, ambient backgrounds, and music beds.
+        """
+    )
+    
     with gr.Row():
-        with gr.Column():
-            script_in = gr.Textbox(lines=10, label="Script (EN, HI, KN)", placeholder="Write your script here...")
-            mode_in = gr.Radio(["auto", "llm", "local"], value="local", label="Parser Mode")
-            music_in = gr.Checkbox(value=True, label="Add Music Bed")
-            submit = gr.Button("Generate")
-        with gr.Column():
-            audio_out = gr.Audio(label="Output Audio", type="filepath")
-            status_out = gr.Textbox(label="Status")
+        with gr.Column(scale=2):
+            gr.Markdown("### ✨ LLM Story Generator")
+            prompt_in = gr.Textbox(
+                lines=2,
+                label="Story Prompt",
+                placeholder="Type a story prompt here... (e.g., A tense moment in an abandoned space station)",
+                elem_classes=["rainbow-box"]
+            )
+            generate_auto_btn = gr.Button("Generate Story & Audio", variant="primary")
+            
+            gr.Markdown("### ✍️ Manual Script")
+            script_in = gr.Textbox(
+                lines=12, 
+                label="Your Script (EN, HI, KN)",
+                placeholder="" # Removed placeholder
+            )
+            
+            with gr.Row():
+                lang_in = gr.Dropdown(
+                    choices=["auto", "en", "hi", "kn"], 
+                    value="auto", 
+                    label="Language Override", 
+                    allow_custom_value=True
+                )
+                
+                bg_in = gr.Dropdown(
+                    choices=["auto"] + sorted([x for x in ESC50_TAXONOMY]), 
+                    value="auto", 
+                    label="Background Sound (Ambient)", 
+                    allow_custom_value=True
+                )
+            
+            with gr.Row():
+                mode_in = gr.Radio(
+                    ["auto", "llm", "local"], 
+                    value="auto", 
+                    label="Parser Mode"
+                )
+                music_in = gr.Checkbox(value=True, label="Add Music Bed")
+                
+            submit = gr.Button("Generate Audio from Script", variant="secondary")
+            
+        with gr.Column(scale=1):
+            audio_out = gr.Audio(label="Output Audio", type="filepath", interactive=False)
+            status_out = gr.Textbox(label="Status", interactive=False)
+            # Removed Tips section
+
+    generate_auto_btn.click(
+        fn=process_auto,
+        inputs=[prompt_in, mode_in, music_in, lang_in, bg_in],
+        outputs=[script_in, audio_out, status_out]
+    )
             
     submit.click(
         fn=process_ui,
-        inputs=[script_in, mode_in, music_in],
+        inputs=[script_in, mode_in, music_in, lang_in, bg_in],
         outputs=[audio_out, status_out]
     )
 
 if __name__ == "__main__":
-    demo.launch()
+    demo.launch(theme=theme)

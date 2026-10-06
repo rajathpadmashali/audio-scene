@@ -56,6 +56,13 @@ def mix_scene(scene: SceneSpec, tts_results: list[TTSResult], ambient_path: str 
     for d, res in zip(scene.dialogues, tts_results):
         audio, _ = librosa.load(res.wav_path, sr=sr, mono=True)
         
+        # Add very light room reverb to blend with ambient bed
+        delay_samples = int(sr * 0.03) # 30ms
+        if delay_samples < len(audio):
+            reverb = np.zeros_like(audio)
+            reverb[delay_samples:] = audio[:-delay_samples] * 0.15
+            audio = audio + reverb
+        
         # Apply fade in/out to remove boundary clicks
         if len(audio) > 2 * fade_len:
             audio[:fade_len] *= fade_in
