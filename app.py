@@ -18,6 +18,10 @@ def process_ui(script_text: str, mode: str, add_music: bool, lang_override: str,
         if bg_override and bg_override != "auto":
             scene.background_scene = bg_override
             
+        # Apply translation if needed (e.g. English -> Kannada)
+        from translator import apply_translation
+        apply_translation(scene)
+            
         tts_results = []
         emotions = []
         
