@@ -1,0 +1,395 @@
+{% extends "base.html" %}
+{% block title %}{{ book.title }} — AudioScene{% endblock %}
+
+{% block head %}
+<style>
+    .player-page {
+        animation: playerEnter 0.5s cubic-bezier(0.16,1,0.3,1);
+    }
+    @keyframes playerEnter {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .player-header {
+        margin-bottom: 1.5rem;
+    }
+    .player-header h1 { font-size: 1.8rem; margin-bottom: 0.4rem; }
+    .player-meta { color: var(--text-dim); font-size: 0.88rem; display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+    .player-meta a { color: var(--text-secondary); }
+    .scene-badge {
+        display: inline-flex; align-items: center; gap: 0.3rem;
+        background: var(--accent-soft); color: var(--accent);
+        padding: 0.2rem 0.7rem; border-radius: 20px;
+        font-size: 0.76rem; font-weight: 600;
+    }
+
+    /* ── Audio bar ── */
+    .audio-bar {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 100px;
+        padding: 0.6rem 1rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 6px 24px rgba(0,0,0,0.1);
+        transition: box-shadow 0.3s, border-color 0.3s;
+    }
+    .audio-bar:hover {
+        box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+        border-color: var(--accent);
+    }
+    .audio-bar audio { 
+        width: 100%; 
+        height: 44px;
+        outline: none;
+    }
+    audio::-webkit-media-controls-panel {
+        background: transparent;
+    }
+
+    /* ── Two-column stage ── */
+    .stage {
+        display: grid;
+        grid-template-columns: 1.6fr 1fr;
+        gap: 1.5rem;
+        align-items: stretch;
+        height: 380px;
+    }
+    @media (max-width: 768px) {
+        .stage { grid-template-columns: 1fr; height: auto; }
+        .char-stage, .transcript-panel { height: 340px; }
+    }
+
+    /* ── Left: Characters stage ── */
+    .char-stage {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 2.5rem 2rem;
+        min-height: 340px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+    }
+    /* subtle ambient glow behind characters */
+    .char-stage::before {
+        content: '';
+        position: absolute;
+        width: 200px; height: 200px;
+        background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+        border-radius: 50%;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        opacity: 0;
+        transition: opacity 0.5s;
+        pointer-events: none;
+    }
+    .char-stage.has-speaker::before { opacity: 1; }
+
+    .characters-row {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        flex-wrap: wrap;
+    }
+
+    /* ── Character ── */
+    .character {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        transition: all 0.4s cubic-bezier(0.16,1,0.3,1);
+        position: relative;
+    }
+    .character:not(.speaking) {
+        opacity: 0.6;
+        filter: grayscale(0.5);
+        transform: scale(0.95);
+    }
+    .character.speaking {
+        opacity: 1;
+        filter: grayscale(0);
+        transform: scale(1.1);
+    }
+
+    .avatar-ring {
+        width: 86px; height: 86px;
+        border-radius: 50%;
+        padding: 3px;
+        background: var(--border);
+        transition: background 0.4s, box-shadow 0.4s;
+    }
+    .character.speaking .avatar-ring {
+        background: linear-gradient(135deg, var(--accent), #a78bfa);
+        box-shadow: 0 0 24px var(--accent-glow), 0 0 48px rgba(124,92,252,0.15);
+    }
+    .avatar-ring img {
+        width: 100%; height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+        background: var(--bg-elevated);
+    }
+
+    .char-name {
+        font-weight: 600; font-size: 0.85rem;
+        margin-top: 0.6rem;
+        color: var(--text-dim);
+        transition: color 0.3s;
+    }
+    .character.speaking .char-name { color: var(--text); }
+
+    /* ── Waveform ── */
+    .waveform {
+        display: flex; gap: 2.5px;
+        height: 24px; align-items: center; justify-content: center;
+        margin-top: 6px;
+        opacity: 0; transition: opacity 0.3s;
+    }
+    .character.speaking .waveform { opacity: 1; }
+
+    .bar {
+        width: 3px; border-radius: 1.5px;
+        height: 4px; animation: none;
+    }
+    .character.speaking .bar {
+        animation: waveBar 0.5s ease-in-out infinite alternate;
+    }
+    .bar-male { background: #60a5fa; }
+    .bar-female { background: #f472b6; }
+    .bar:nth-child(1) { animation-delay: 0s; }
+    .bar:nth-child(2) { animation-delay: 0.07s; }
+    .bar:nth-child(3) { animation-delay: 0.14s; }
+    .bar:nth-child(4) { animation-delay: 0.21s; }
+    .bar:nth-child(5) { animation-delay: 0.28s; }
+    .bar:nth-child(6) { animation-delay: 0.21s; }
+    .bar:nth-child(7) { animation-delay: 0.14s; }
+    @keyframes waveBar {
+        0% { height: 4px; }
+        100% { height: 24px; }
+    }
+
+
+
+    /* ── Right: Transcript panel ── */
+    .transcript-panel {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+    }
+    .transcript-panel h3 {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--text-dim);
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        margin-bottom: 1rem;
+        flex-shrink: 0;
+    }
+
+    .transcript-scroll {
+        flex: 1;
+        overflow: hidden;
+        position: relative;
+        min-height: 0;
+    }
+
+    .t-line {
+        padding: 0.65rem 0.85rem;
+        margin-bottom: 0.3rem;
+        border-radius: 8px;
+        border-left: 3px solid transparent;
+        font-size: 0.85rem;
+        line-height: 1.5;
+        color: var(--text-dim);
+        transition: all 0.4s cubic-bezier(0.16,1,0.3,1);
+        opacity: 0.3;
+        max-height: 1000px;
+        overflow: hidden;
+    }
+    .t-line strong {
+        color: var(--text-secondary);
+        font-weight: 600;
+        transition: color 0.3s;
+    }
+    .t-line .emo { font-size: 0.72rem; color: var(--text-dim); font-weight: 400; }
+
+    .t-line.past {
+        opacity: 0;
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        margin-bottom: 0;
+        border: none;
+    }
+    .t-line.active {
+        opacity: 1;
+        background: var(--accent-soft);
+        border-left-color: var(--accent);
+        color: var(--text);
+    }
+    .t-line.active strong { color: var(--accent); }
+    .t-line.upcoming {
+        opacity: 0.3;
+    }
+
+    /* Fade edges on transcript */
+    .transcript-scroll::before,
+    .transcript-scroll::after {
+        content: '';
+        position: absolute;
+        left: 0; right: 0;
+        height: 40px;
+        z-index: 2;
+        pointer-events: none;
+    }
+    .transcript-scroll::before {
+        top: 0;
+        background: linear-gradient(to bottom, var(--bg-card), transparent);
+    }
+    .transcript-scroll::after {
+        bottom: 0;
+        background: linear-gradient(to top, var(--bg-card), transparent);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="player-page">
+    <div class="player-header">
+        <h1>{{ book.title }}</h1>
+        <div class="player-meta">
+            By <a href="/profile/{{ book.author.id }}">@{{ book.author.username }}</a>
+            <span class="scene-badge">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 3v18"/><path d="M3 7.5h4"/><path d="M3 12h18"/><path d="M3 16.5h4"/><path d="M17 3v18"/><path d="M17 7.5h4"/><path d="M17 16.5h4"/></svg>
+                {{ scene.background_scene }}
+            </span>
+        </div>
+    </div>
+
+    <div class="audio-bar">
+        <audio id="audioPlayer" controls preload="metadata">
+            <source src="{{ url_for('static', filename=book.file_path) }}" type="audio/wav">
+        </audio>
+    </div>
+
+    <div class="stage">
+        <!-- LEFT: Characters -->
+        <div class="char-stage" id="charStage">
+            <div class="characters-row" id="charactersContainer">
+                {% set unique_speakers = [] %}
+                {% for d in scene.dialogues %}
+                    {% if d.speaker not in unique_speakers %}
+                        {% set _ = unique_speakers.append(d.speaker) %}
+                        <div class="character" id="char-{{ d.speaker|replace(' ', '-') }}" data-gender="{{ d.gender }}">
+                            <div class="avatar-ring">
+                                {% if d.gender == 'female' %}
+                                    <img src="{{ url_for('static', filename='img/woman.png') }}" alt="{{ d.speaker }}">
+                                {% else %}
+                                    <img src="{{ url_for('static', filename='img/man.png') }}" alt="{{ d.speaker }}">
+                                {% endif %}
+                            </div>
+                            <div class="char-name">{{ d.speaker }}</div>
+                            <div class="waveform">
+                                {% set bclass = 'bar-female' if d.gender == 'female' else 'bar-male' %}
+                                <div class="bar {{ bclass }}"></div>
+                                <div class="bar {{ bclass }}"></div>
+                                <div class="bar {{ bclass }}"></div>
+                                <div class="bar {{ bclass }}"></div>
+                                <div class="bar {{ bclass }}"></div>
+                                <div class="bar {{ bclass }}"></div>
+                                <div class="bar {{ bclass }}"></div>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+
+        </div>
+
+        <!-- RIGHT: Transcript -->
+        <div class="transcript-panel">
+            <h3 class="flex-center" style="justify-content: flex-start; gap: 0.5rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                Transcript
+            </h3>
+            <div class="transcript-scroll" id="transcriptScroll">
+                {% for d in scene.dialogues %}
+                    <div class="t-line upcoming" id="line-{{ d.idx }}" data-idx="{{ d.idx }}">
+                        <strong>{{ d.speaker }}</strong> <span class="emo">{{ d.emotion }}</span><br>
+                        {{ d.text }}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const audio = document.getElementById('audioPlayer');
+const timeline = {{ timeline|tojson|safe }};
+const dialogues = {{ scene.dialogues|tojson|safe }};
+const charStage = document.getElementById('charStage');
+
+const transcriptScroll = document.getElementById('transcriptScroll');
+
+const idxToSpeaker = {};
+const idxToDialogue = {};
+dialogues.forEach(d => {
+    idxToSpeaker[d.idx] = d.speaker.replace(/ /g, '-');
+    idxToDialogue[d.idx] = d;
+});
+
+let lastActiveIdx = -1;
+
+audio.addEventListener('timeupdate', () => {
+    const t = audio.currentTime;
+    let activeIdx = -1;
+    let lastFinishedIdx = -1;
+
+    for (let i = 0; i < timeline.length; i++) {
+        if (t >= timeline[i].start && t <= timeline[i].end) {
+            activeIdx = timeline[i].idx;
+        }
+        if (t > timeline[i].end) {
+            lastFinishedIdx = Math.max(lastFinishedIdx, timeline[i].idx);
+        }
+    }
+
+    if (activeIdx === lastActiveIdx) return;
+    lastActiveIdx = activeIdx;
+
+    // ── Update characters ──
+    document.querySelectorAll('.character').forEach(el => el.classList.remove('speaking'));
+    charStage.classList.remove('has-speaker');
+
+    if (activeIdx !== -1) {
+        const charEl = document.getElementById('char-' + idxToSpeaker[activeIdx]);
+        if (charEl) charEl.classList.add('speaking');
+        charStage.classList.add('has-speaker');
+    }
+
+    // ── Update transcript lines ──
+    document.querySelectorAll('.t-line').forEach(el => {
+        const idx = parseInt(el.dataset.idx);
+        el.classList.remove('active', 'past', 'upcoming');
+
+        if (idx === activeIdx) {
+            el.classList.add('active');
+        } else if (idx <= lastFinishedIdx && activeIdx !== idx) {
+            el.classList.add('past');
+        } else {
+            el.classList.add('upcoming');
+        }
+    });
+});
+</script>
+{% endblock %}

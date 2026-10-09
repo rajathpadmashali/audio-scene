@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+    <defs>
+        <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#3b82f6" />
+            <stop offset="100%" stop-color="#1e3a8a" />
+        </linearGradient>
+    </defs>
+    <rect width="200" height="200" fill="url(#bg)" />
+    <!-- Hair -->
+    <path d="M 50 80 Q 100 20 150 80 Q 180 120 150 160 Q 100 90 50 160 Q 20 120 50 80 Z" fill="#1e293b"/>
+    <!-- Face -->
+    <path d="M 70 80 Q 100 60 130 80 L 130 140 Q 100 170 70 140 Z" fill="#fcd34d"/>
+    <!-- Eyes -->
+    <circle cx="90" cy="110" r="8" fill="#1e293b"/>
+    <circle cx="110" cy="110" r="8" fill="#1e293b"/>
+    <!-- Mouth -->
+    <path d="M 90 130 Q 100 140 110 130" stroke="#b45309" stroke-width="4" stroke-linecap="round" fill="none"/>
+</svg>

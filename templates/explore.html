@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — AudioScene{% endblock %}
+
+{% block head %}
+<style>
+    .feed-header {
+        margin-bottom: 2rem;
+    }
+    .feed-header h1 { margin-bottom: 0.25rem; }
+
+    .book-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 1.75rem;
+        margin-bottom: 1.25rem;
+        box-shadow: var(--shadow);
+        transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+    }
+    .book-card:hover {
+        border-color: var(--border-hover);
+        box-shadow: var(--shadow-lg);
+        transform: translateY(-2px);
+    }
+
+    .book-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text);
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+    .book-title:hover { color: var(--accent); }
+
+    .book-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-top: 0.5rem;
+        font-size: 0.82rem;
+        color: var(--text-dim);
+    }
+    .book-meta a { color: var(--text-secondary); font-weight: 500; }
+    .book-meta a:hover { color: var(--accent); }
+    .book-meta .dot { width: 3px; height: 3px; background: var(--text-dim); border-radius: 50%; }
+
+    .book-audio {
+        margin-top: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="feed-header">
+    <div class="flex-between">
+        <div>
+            <h1>{{ title }}</h1>
+            {% if title == "Home Feed" %}
+                <p class="subtitle">Audio stories from people you follow</p>
+            {% else %}
+                <p class="subtitle">Discover audio stories from the community</p>
+            {% endif %}
+        </div>
+        <a href="/create" class="btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg> Create
+        </a>
+    </div>
+</div>
+
+{% if books %}
+    <div class="card-list">
+    {% for book in books %}
+        <div class="book-card card" style="cursor: pointer; background: var(--card-overlay), url('{{ url_for('static', filename='img/' + book.theme + '.jpg') }}') center/cover;" onclick="if(!event.target.closest('audio') && !event.target.closest('a')) window.location.href='/book/{{ book.id }}'">
+            <a href="/book/{{ book.id }}" class="book-title">{{ book.title }}</a>
+            <div class="book-meta">
+                <a href="/profile/{{ book.author.id }}">@{{ book.author.username }}</a>
+                <span class="dot"></span>
+                <span>{{ book.created_at.strftime('%b %d, %Y') }}</span>
+            </div>
+            <div class="book-audio">
+                <audio controls preload="none">
+                    <source src="{{ url_for('static', filename=book.file_path) }}" type="audio/wav">
+                </audio>
+            </div>
+        </div>
+    {% endfor %}
+    </div>
+{% else %}
+    <div class="empty-state">
+        <div class="empty-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18v3c0 .6.4 1 1 1h4v-3h3v-3h-2V9C8 5.7 10.7 3 14 3c2 0 3.9 1 5 2.6L17.5 7"/></svg>
+        </div>
+        <p>No audio stories here yet.</p>
+        {% if title == "Home Feed" %}
+            <a href="/explore" class="btn btn-outline">Explore Stories</a>
+        {% else %}
+            <a href="/create" class="btn">Create Your First Story</a>
+        {% endif %}
+    </div>
+{% endif %}
+{% endblock %}

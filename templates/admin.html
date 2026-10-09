@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}Admin — AudioScene{% endblock %}
+
+{% block head %}
+<style>
+    .admin-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+    @media (max-width: 768px) { .admin-grid { grid-template-columns: 1fr; } }
+
+    .admin-stat-row {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    .admin-stat {
+        flex: 1;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 1.5rem;
+        text-align: center;
+    }
+    .admin-stat .big { font-size: 2rem; font-weight: 800; color: var(--accent); }
+    .admin-stat .label { font-size: 0.78rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 0.25rem; }
+
+    .admin-section {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 1.5rem;
+    }
+    .admin-section h3 {
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .admin-list { list-style: none; padding: 0; }
+    .admin-list li {
+        padding: 0.65rem 0;
+        border-bottom: 1px solid rgba(42,42,58,0.4);
+        font-size: 0.9rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .admin-list li:last-child { border-bottom: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="flex-between mb-3">
+    <div>
+        <h1>Admin Dashboard</h1>
+        <p class="subtitle">Overview of your AudioScene instance</p>
+    </div>
+</div>
+
+<div class="admin-stat-row">
+    <div class="admin-stat">
+        <div class="big">{{ users|length }}</div>
+        <div class="label">Users</div>
+    </div>
+    <div class="admin-stat">
+        <div class="big">{{ books|length }}</div>
+        <div class="label">Audio Stories</div>
+    </div>
+    <div class="admin-stat">
+        <div class="big">{{ users|selectattr('is_admin')|list|length }}</div>
+        <div class="label">Admins</div>
+    </div>
+</div>
+
+<div class="admin-grid">
+    <div class="admin-section">
+        <h3>👥 Users</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Role</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td><a href="/profile/{{ u.id }}">{{ u.username }}</a></td>
+                    <td>
+                        {% if u.is_admin %}
+                            <span class="badge badge-accent">Admin</span>
+                        {% else %}
+                            <span class="badge" style="background:rgba(255,255,255,0.05);color:var(--text-dim);">User</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="admin-section">
+        <h3>📚 Recent Stories</h3>
+        <ul class="admin-list">
+            {% for b in books[:15] %}
+            <li>
+                <a href="/book/{{ b.id }}">{{ b.title }}</a>
+                <span class="text-dim text-sm">{{ b.author.username }}</span>
+            </li>
+            {% else %}
+            <li class="text-dim">No stories yet.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}

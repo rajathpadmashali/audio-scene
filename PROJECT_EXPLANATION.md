@@ -1,17 +1,19 @@
 # How It Works: A Simple Explanation
 
-This project is a **Multilingual Audio Scene Generator**. Think of it as an automatic audio-book director. You give it a text script, and it gives you back a fully produced audio track with voices, emotions, and background sounds.
+This project is a **Multilingual Audio Scene Generator**. Think of it as an automatic audio-book director. You can give it a short prompt or a full text script, and it gives you back a fully produced audio track with voices, emotions, background sounds, and an optional music bed.
 
-### The 4 Steps
+### The 5 Steps
 
-1. **The Reader (Parser)**: You type a script. The system uses an AI called Groq to read it. It figures out who is speaking, what emotion they are feeling (happy, angry, sad), and what the background setting is (like a thunderstorm or a cafe).
-2. **The Synthetic Voices (TTS & Emotion)**: We use Meta's MMS models to read the lines in English, Hindi, or Kannada. MMS does not natively act emotions or provide separate speakers in this setup, so restrained speed and pitch changes suggest the tagged emotion and distinguish gender variants. These effects improve pacing but do not make the output a human recording.
-3. **The Foley Artist (Ambient Sounds)**: The system takes the background setting it found in step 1 and grabs a real-world sound effect from the **ESC-50 Dataset** (a massive library of 2,000 environmental sounds).
-4. **The Audio Engineer (Mixer)**: Finally, the system stitches the voices together with short pauses. It plays the background sound underneath. Whenever a character speaks, it automatically lowers the volume of the background sound (a technique called "ducking") so you can hear the voices clearly.
+1. **The Writer (LLM Story Generator)**: If you only have an idea, you can type a short prompt. The system uses Groq (an AI) to automatically write a formatted script with characters, emotions, and settings.
+2. **The Reader & Translator (Parser)**: The system reads the script to figure out who is speaking, their emotion, and the background setting. If you requested a specific language (English, Hindi, or Kannada), the system will seamlessly translate the dialogue into that language using AI. You can also manually override the background scene!
+3. **The Synthetic Voices (TTS & Emotion)**: We use Meta's MMS models to read the lines in English, Hindi, or Kannada. To add life, the system uses digital signal processing (DSP) to adjust speed, pitch, and tone, simulating emotions (like happy, angry, sad) and distinguishing genders.
+4. **The Foley Artist & Musician (Ambient Sounds)**: The system grabs a matching real-world background effect from the **ESC-50 Dataset** (like rain, footsteps, or wind). It also selects an optional royalty-free music bed that fits the dominant emotion of the scene.
+5. **The Audio Engineer (Mixer)**: Finally, the system stitches the voices together, layering them over the ambient sound and music. Whenever a character speaks, it automatically lowers the background volume (a technique called "ducking") so the dialogue is always clear.
 
-### Audio assets
-*   **ESC-50**: Provides background sound effects such as rain, wind, and footsteps after the sound bank is built.
-*   **MMS-TTS**: The base multilingual speech models. Separate OpenSLR/LJSpeech fine-tuned checkpoints are not included in this checkout.
+### Audio Assets
+*   **ESC-50**: Provides background sound effects.
+*   **Music Bed**: Royalty-free tracks mapped to emotions (calm, happy, sad, tense).
+*   **MMS-TTS**: The base multilingual speech models.
 
 ---
 
@@ -19,4 +21,4 @@ This project is a **Multilingual Audio Scene Generator**. Think of it as an auto
 1. Open PowerShell and go to your project folder.
 2. Activate the environment: `.\venv\Scripts\Activate.ps1`
 3. Start the app: `python app.py`
-4. Open the web link it gives you, type a script, and hit Generate!
+4. Open the web link it gives you. You can either type a story prompt for the AI to generate, or manually write a script, and hit Generate!

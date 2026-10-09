@@ -62,6 +62,8 @@ def generate_script_from_prompt(prompt: str) -> str:
     sys_prompt = """
     You are an expert audio drama scriptwriter. The user will give you a prompt.
     Write a short script (4 to 8 lines of dialogue) matching the prompt.
+    If the prompt is generic, create a popular or meaningful related story.
+    Use simple English whenever possible and don't make it too wordy.
     
     You MUST format it strictly as follows:
     Context: A brief description of the setting and ambient sounds.
