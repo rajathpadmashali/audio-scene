@@ -156,6 +156,7 @@ def create():
             json_filename = f"{uid}.json"
             
             out_path = os.path.join('static', 'audio', wav_filename)
+            os.makedirs(os.path.dirname(out_path), exist_ok=True)
             mix_scene(scene, tts_results, ambient_path, music_path, out_path)
             
             # Save to DB
