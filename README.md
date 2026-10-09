@@ -58,5 +58,6 @@ This checkout uses Meta's multilingual MMS-TTS checkpoints as its base voices. E
 
 
 ## Demo
-Check out the full demo of the workflow:
-[Download/Watch Demo Video](demo_gen/demo.mp4)
+Watch the full demo of the workflow:
+
+<video src="demo_gen/demo.mp4" width="100%" controls autoplay loop></video>
