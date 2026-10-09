@@ -55,3 +55,8 @@ Supported emotions are `neutral`, `happy`, `sad`, `angry`, `fear`, `surprise`, a
 ## How We Trained the Models
 *(See `reports/PROJECT_REPORT.md` for the full scientific breakdown).*
 This checkout uses Meta's multilingual MMS-TTS checkpoints as its base voices. Emotion and gender differences are approximated with audio processing unless you configure separate fine-tuned checkpoints. ESC-50 supplies background effects; it is not a music library. Treat generated voices as synthetic rather than human recordings.
+
+
+## Demo
+Check out the full demo of the workflow:
+[Download/Watch Demo Video](demo_gen/demo.mp4)
