@@ -27,5 +27,5 @@ instance/
 *.db
 
 # Demo Gen
-demo_gen/
-demo.mp4
+demo_gen/*
+!demo_gen/demo.mp4
