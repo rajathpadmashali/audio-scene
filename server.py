@@ -1,7 +1,11 @@
 import os
 import uuid
 import json
+import warnings
 from pathlib import Path
+
+# Suppress pyloudnorm clipping warnings
+warnings.filterwarnings("ignore", message="Possible clipped samples in output.")
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -27,7 +31,7 @@ login_manager.login_view = 'login'
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return db.session.get(User, int(user_id))
 
 @app.before_request
 def create_tables():
@@ -89,7 +93,7 @@ def logout():
 @app.route('/follow/<int:user_id>')
 @login_required
 def follow(user_id):
-    user = User.query.get_or_404(user_id)
+    user = db.get_or_404(User, user_id)
     if user != current_user:
         current_user.follow(user)
         db.session.commit()
@@ -99,7 +103,7 @@ def follow(user_id):
 @app.route('/unfollow/<int:user_id>')
 @login_required
 def unfollow(user_id):
-    user = User.query.get_or_404(user_id)
+    user = db.get_or_404(User, user_id)
     if user != current_user:
         current_user.unfollow(user)
         db.session.commit()
@@ -176,7 +180,7 @@ def create():
 
 @app.route('/book/<int:book_id>')
 def view_book(book_id):
-    book = AudioBook.query.get_or_404(book_id)
+    book = db.get_or_404(AudioBook, book_id)
     scene_data = json.loads(book.scene_json)
     
     # Need to load the timeline to inject into template
@@ -191,7 +195,7 @@ def view_book(book_id):
 
 @app.route('/profile/<int:user_id>')
 def profile(user_id):
-    user = User.query.get_or_404(user_id)
+    user = db.get_or_404(User, user_id)
     books = AudioBook.query.filter_by(user_id=user.id).order_by(AudioBook.created_at.desc()).all()
     return render_template('profile.html', user=user, books=books)
 
