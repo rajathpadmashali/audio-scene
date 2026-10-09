@@ -3,9 +3,9 @@
 A fully automated, full-stack web application that converts text scripts (English, Hindi, Kannada) into an emotional multi-speaker audio scene complete with background sounds, cinematic themes, and automatic audio ducking!
 
 ## Demo
-Watch the full demo of the workflow:
+[▶️ Click Here to Watch the Full Demo Video](demo_gen/demo.mp4)
 
-<video src="demo_gen/demo.mp4" width="100%" controls autoplay loop></video>
+*(Note: GitHub blocks relative video embeds in Markdown, so just click the link above to watch the video in GitHub's native player!)*
 
 ## Features
 
