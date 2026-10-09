@@ -2,6 +2,11 @@
 
 A fun, automated pipeline that converts text scripts (English, Hindi, Kannada) into an emotional multi-speaker audio scene complete with background sounds and automatic audio ducking!
 
+## Demo
+Watch the full demo of the workflow:
+
+<video src="demo_gen/demo.mp4" width="100%" controls autoplay loop></video>
+
 ## Easy Setup
 
 1. **Create and activate a virtual environment**, then install the required packages:
@@ -57,7 +62,3 @@ Supported emotions are `neutral`, `happy`, `sad`, `angry`, `fear`, `surprise`, a
 This checkout uses Meta's multilingual MMS-TTS checkpoints as its base voices. Emotion and gender differences are approximated with audio processing unless you configure separate fine-tuned checkpoints. ESC-50 supplies background effects; it is not a music library. Treat generated voices as synthetic rather than human recordings.
 
 
-## Demo
-Watch the full demo of the workflow:
-
-<video src="demo_gen/demo.mp4" width="100%" controls autoplay loop></video>
