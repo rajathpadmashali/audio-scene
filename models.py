@@ -50,14 +50,15 @@ class AudioBook(db.Model):
         try:
             data = json.loads(self.scene_json)
             bg = data.get('background_scene', '').lower()
-            themes = ['scifi', 'mystery', 'fantasy', 'romance', 'horror', 'comedy', 'thriller', 'drama']
+            themes = ['scifi', 'mystery', 'fantasy', 'romance', 'horror', 'comedy', 'thriller', 'drama', 'study']
             for t in themes:
                 if t in bg: return t
             if 'magic' in bg: return 'fantasy'
             if 'noir' in bg: return 'mystery'
             if 'space' in bg: return 'scifi'
             if 'spooky' in bg: return 'horror'
+            if 'class' in bg or 'library' in bg or 'school' in bg or 'university' in bg: return 'study'
         except:
             pass
-        themes = ['scifi', 'mystery', 'fantasy', 'romance', 'horror', 'comedy', 'thriller', 'drama']
-        return themes[self.id % len(themes)] if self.id else 'drama'
+        themes = ['scifi', 'mystery', 'fantasy', 'romance', 'horror', 'comedy', 'thriller', 'drama', 'study']
+        return themes[self.id % len(themes)] if self.id else 'study'

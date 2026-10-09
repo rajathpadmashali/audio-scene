@@ -37,12 +37,34 @@ def load_user(user_id):
 def create_tables():
     app.before_request_funcs[None].remove(create_tables)
     db.create_all()
+    # Ensure admin user exists with username 'admin' and password 'admin'
+    admin_user = User.query.filter_by(username='admin').first()
+    if not admin_user:
+        admin_user = User(
+            username='admin',
+            password_hash=generate_password_hash('admin'),
+            is_admin=True
+        )
+        db.session.add(admin_user)
+        db.session.commit()
+    else:
+        admin_user.is_admin = True
+        admin_user.password_hash = generate_password_hash('admin')
+        db.session.commit()
 
 @app.route('/')
 def index():
     return redirect(url_for('explore'))
 
+
+@app.route('/my_audios')
+@login_required
+def my_audios():
+    books = AudioBook.query.filter_by(user_id=current_user.id).order_by(AudioBook.created_at.desc()).all()
+    return render_template('explore.html', books=books, title="My Audiobooks")
+
 @app.route('/explore')
+
 def explore():
     books = AudioBook.query.order_by(AudioBook.created_at.desc()).all()
     return render_template('explore.html', books=books, title="Explore All")
@@ -127,6 +149,9 @@ def create():
             if mode == 'Manual':
                 # User wrote the full story, just let the parser extract scene
                 script_text = prompt
+            elif theme == 'Study' or mode == 'Study':
+                full_prompt = f"Create an educational and engaging discussion between 2 or more people in {language} who discuss the topic '{prompt}'. They should explain the concept clearly to help the listener understand it."
+                script_text = generate_script_from_prompt(full_prompt)
             else:
                 # Add the theme and language heavily to the prompt
                 full_prompt = f"Write a scene in {language}, in a {theme} style. {prompt}"
@@ -134,9 +159,11 @@ def create():
             
             # 2. Parse Script
             scene = parse_script(script_text, 'auto')
-            # 2. Parse Script
-            scene = parse_script(script_text, 'auto')
             apply_translation(scene)
+            
+            # Ensure the selected theme is in the background_scene so models.py infers the correct folder
+            if theme.lower() not in scene.background_scene.lower():
+                scene.background_scene = f"{theme.title()} - {scene.background_scene}"
             
             # 3. Generate TTS
             tts_results = []
@@ -148,7 +175,16 @@ def create():
                 
             # 4. Background and Mix
             dominant = max(set(emotions), key=emotions.count) if emotions else "neutral"
-            ambient_path = get_ambient_clip(scene.background_scene)
+            
+            # Handle manual ambient selection
+            ambient_selection = request.form.get('ambient', 'AI Recommended')
+            if ambient_selection == 'AI Recommended':
+                ambient_path = get_ambient_clip(scene.background_scene)
+            elif ambient_selection == 'None':
+                ambient_path = None
+            else:
+                ambient_path = get_ambient_clip(ambient_selection)
+                
             music_path = get_music_clip(dominant)
             
             uid = str(uuid.uuid4())
@@ -179,7 +215,30 @@ def create():
             
     return render_template('create.html')
 
+
+@app.route('/delete_book/<int:book_id>', methods=['POST'])
+@login_required
+def delete_book(book_id):
+    book = db.get_or_404(AudioBook, book_id)
+    if book.user_id != current_user.id and not current_user.is_admin:
+        flash('Unauthorized to delete this audio.')
+        return redirect(url_for('explore'))
+        
+    try:
+        wav_path = os.path.join('static', book.file_path)
+        json_path = os.path.join('static', book.timeline_path)
+        if os.path.exists(wav_path): os.remove(wav_path)
+        if os.path.exists(json_path): os.remove(json_path)
+    except:
+        pass
+        
+    db.session.delete(book)
+    db.session.commit()
+    flash('Audio successfully deleted.')
+    return redirect(request.referrer or url_for('profile', user_id=current_user.id))
+
 @app.route('/book/<int:book_id>')
+
 def view_book(book_id):
     book = db.get_or_404(AudioBook, book_id)
     scene_data = json.loads(book.scene_json)
@@ -199,6 +258,37 @@ def profile(user_id):
     user = db.get_or_404(User, user_id)
     books = AudioBook.query.filter_by(user_id=user.id).order_by(AudioBook.created_at.desc()).all()
     return render_template('profile.html', user=user, books=books)
+
+
+@app.route('/admin')
+@login_required
+def admin_panel():
+    if not current_user.is_admin:
+        flash("Unauthorized access.")
+        return redirect(url_for('index'))
+    books = AudioBook.query.all()
+    return render_template('admin.html', books=books)
+
+@app.route('/admin/delete_all', methods=['POST'])
+@login_required
+def admin_delete_all():
+    if not current_user.is_admin:
+        flash("Unauthorized.")
+        return redirect(url_for('index'))
+    
+    books = AudioBook.query.all()
+    for book in books:
+        try:
+            wav_path = os.path.join('static', book.file_path)
+            json_path = os.path.join('static', book.timeline_path)
+            if os.path.exists(wav_path): os.remove(wav_path)
+            if os.path.exists(json_path): os.remove(json_path)
+        except:
+            pass
+        db.session.delete(book)
+    db.session.commit()
+    flash("All audios have been successfully deleted.")
+    return redirect(url_for('admin_panel'))
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

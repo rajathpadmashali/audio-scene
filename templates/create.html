@@ -226,6 +226,39 @@
         border-radius: 50%;
         background: var(--accent);
     }
+
+    .nice-select {
+        height: 60px;
+        margin: 0;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        width: 100%;
+        padding: 0 3rem 0 1.25rem;
+        font-size: 1.1rem;
+        color: white;
+        background: var(--bg-card) url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23a78bfa%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E") no-repeat right 1rem center;
+        background-size: 20px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        cursor: pointer;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        transition: all 0.2s;
+    }
+    .nice-select:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.2);
+    }
+    .nice-select option {
+        background: var(--bg-card);
+        color: white;
+    }
+
+    @keyframes rainbowBorder {
+        0% { background-position: 0% 50%; }
+        100% { background-position: 100% 50%; }
+    }
 </style>
 {% endblock %}
 
@@ -238,6 +271,7 @@
 <form method="POST" id="createForm">
     <input type="hidden" name="language" id="langInput" value="English">
     <input type="hidden" name="theme" id="themeInput" value="Mystery">
+    <input type="hidden" name="ambient" id="ambientInput" value="AI Recommended">
     <input type="hidden" name="prompt" id="promptInput" value="">
 
     <!-- STEP 1: Language -->
@@ -264,6 +298,12 @@
     <!-- STEP 2: Theme -->
     <div id="step2" class="step-pane">
         <div class="theme-grid">
+            <div class="study-highlight" style="position: relative; padding: 4px; border-radius: 20px; background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3, #ff0000); background-size: 200% 100%; animation: rainbowBorder 3s linear infinite;">
+                <div class="theme-card" onclick="nextStep(2, 'Study')" style="margin: 0; border: none; width: 100%; height: 100%;">
+                    <img src="{{ url_for('static', filename='img/study.jpg') }}" class="theme-img" alt="Study" loading="lazy">
+                    <div class="theme-label">Study</div>
+                </div>
+            </div>
             <div class="theme-card" onclick="nextStep(2, 'Mystery')">
                 <img src="{{ url_for('static', filename='img/mystery.jpg') }}" class="theme-img" alt="Mystery" loading="lazy">
                 <div class="theme-label">Mystery</div>
@@ -299,17 +339,76 @@
         </div>
     </div>
 
-    <!-- STEP 3: Mode -->
+    
+    <!-- STEP 3: Ambient Sound -->
     <div id="step3" class="step-pane">
+        <div style="display: flex; gap: 1rem; flex-direction: column; max-width: 420px; margin: 0 auto; padding-top: 1rem;">
+            
+            <!-- AI Choice -->
+            <button type="button" class="btn" style="width: 100%; padding: 1.25rem; font-size: 1.1rem; background: linear-gradient(135deg, rgba(167, 139, 250, 0.15), rgba(167, 139, 250, 0.05)); border: 1px solid var(--accent); color: var(--accent); display: flex; align-items: center; justify-content: center; gap: 0.75rem; border-radius: var(--radius-lg); transition: all 0.2s;" onclick="nextStep(3, 'AI Recommended')" onmouseover="this.style.boxShadow='0 0 15px rgba(167,139,250,0.3)'" onmouseout="this.style.boxShadow='none'">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+                Let AI Decide Background Sound
+            </button>
+            
+            <div style="display: flex; align-items: center; gap: 1rem; margin: 0.5rem 0;">
+                <hr style="flex: 1; border: none; border-top: 1px solid var(--border);">
+                <span style="color: var(--text-dim); font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Or pick manually</span>
+                <hr style="flex: 1; border: none; border-top: 1px solid var(--border);">
+            </div>
+
+            <!-- Manual Choice -->
+            <div style="display: flex; align-items: center; gap: 0.75rem; width: 100%;">
+                <div style="flex: 1; position: relative;">
+                    <select id="ambientDropdown" class="nice-select">
+
+<option value="None">None (Silence)</option>
+                <option value="airplane">Airplane</option>
+                <option value="car_horn">Car Horn</option>
+                <option value="cat">Cat</option>
+                <option value="chirping_birds">Chirping Birds</option>
+                <option value="church_bells">Church Bells</option>
+                <option value="clapping">Clapping</option>
+                <option value="clock_tick">Clock Tick</option>
+                <option value="crackling_fire">Crackling Fire</option>
+                <option value="crickets">Crickets</option>
+                <option value="crow">Crow</option>
+                <option value="crying_baby">Crying Baby</option>
+                <option value="dog">Dog</option>
+                <option value="engine">Engine</option>
+                <option value="footsteps">Footsteps</option>
+                <option value="helicopter">Helicopter</option>
+                <option value="keyboard_typing">Keyboard Typing</option>
+                <option value="laughing">Laughing</option>
+                <option value="rain">Rain</option>
+                <option value="rooster">Rooster</option>
+                <option value="sea_waves">Sea Waves</option>
+                <option value="siren">Siren</option>
+                <option value="thunderstorm">Thunderstorm</option>
+                <option value="train">Train</option>
+                <option value="vacuum_cleaner">Vacuum Cleaner</option>
+                <option value="wind">Wind</option>
+            
+                    </select>
+                </div>
+                
+                <button type="button" class="btn generate-btn" style="margin: 0; padding: 0 1.5rem; border-radius: var(--radius-lg); flex-shrink: 0; height: 60px; display: flex; align-items: center; justify-content: center;" onclick="nextStep(3, document.getElementById('ambientDropdown').value)" title="Continue with selected sound">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- STEP 4: Mode -->
+    <div id="step4" class="step-pane">
         <div class="choice-grid" style="grid-template-columns: 1fr 1fr;">
-            <div class="choice-card" onclick="nextStep(3, 'AI')">
+            <div class="choice-card" onclick="nextStep(4, 'AI')">
                 <div class="choice-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/><path d="M19 3v4"/><path d="M21 5h-4"/></svg>
                 </div>
                 <h3 style="margin-bottom: 0.5rem;">AI Generated</h3>
                 <p class="text-sm text-dim">Quick AI idea</p>
             </div>
-            <div class="choice-card" onclick="nextStep(3, 'Manual')">
+            <div class="choice-card" onclick="nextStep(4, 'Manual')">
                 <div class="choice-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
                 </div>
@@ -320,7 +419,7 @@
     </div>
 
     <!-- STEP 4: Prompt -->
-    <div id="step4_AI" class="step-pane">
+    <div id="step5_AI" class="step-pane">
         <div class="prompt-area">
             <textarea id="aiPromptText" rows="3" placeholder="A short idea, e.g. 'A detective questioning a suspect...'"></textarea>
             <br>
@@ -331,13 +430,23 @@
         </div>
     </div>
 
-    <div id="step4_Manual" class="step-pane">
+    <div id="step5_Manual" class="step-pane">
         <div class="prompt-area">
             <textarea id="manualPromptText" rows="6" placeholder="Type your full story script here..."></textarea>
             <br>
             <button type="button" class="btn generate-btn" onclick="submitManual()">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
                 Generate Scene
+            </button>
+        </div>
+    </div>
+    <div id="step_Study" class="step-pane">
+        <div class="prompt-area">
+            <textarea id="studyPromptText" rows="4" placeholder="Enter a topic to study, e.g. 'Quantum Computing' or 'Photosynthesis'"></textarea>
+            <br>
+            <button type="button" class="btn generate-btn" onclick="submitStudy()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+                Generate Study Audio
             </button>
         </div>
     </div>
@@ -367,24 +476,41 @@ function nextStep(currentStep, value) {
         document.getElementById('stepTitle').textContent = "Choose Theme";
         document.getElementById('stepSub').textContent = "Pick a genre.";
     } 
-    else if (currentStep === 2) {
+        else if (currentStep === 2) {
         document.getElementById('themeInput').value = value;
         document.getElementById('step2').classList.remove('active');
+        
         document.getElementById('step3').classList.add('active');
-        document.getElementById('stepTitle').textContent = "How to create?";
-        document.getElementById('stepSub').textContent = "AI idea or write it yourself.";
+        document.getElementById('stepTitle').textContent = "Background Sound";
+        document.getElementById('stepSub').textContent = "Pick a mood or let AI decide.";
     }
     else if (currentStep === 3) {
-        creationMode = value;
+        document.getElementById('ambientInput').value = value;
         document.getElementById('step3').classList.remove('active');
         
+        const currentTheme = document.getElementById('themeInput').value;
+        if (currentTheme === 'Study') {
+            document.getElementById('step_Study').classList.add('active');
+            document.getElementById('stepTitle').textContent = "Study Topic";
+            document.getElementById('stepSub').textContent = "Enter a topic to learn about.";
+            setTimeout(() => document.getElementById('studyPromptText').focus(), 100);
+        } else {
+            document.getElementById('step4').classList.add('active');
+            document.getElementById('stepTitle').textContent = "How to create?";
+            document.getElementById('stepSub').textContent = "AI idea or write it yourself.";
+        }
+    }
+    else if (currentStep === 4) {
+        creationMode = value;
+        document.getElementById('step4').classList.remove('active');
+        
         if (value === 'AI') {
-            document.getElementById('step4_AI').classList.add('active');
+            document.getElementById('step5_AI').classList.add('active');
             document.getElementById('stepTitle').textContent = "Type an Idea";
             document.getElementById('stepSub').textContent = "Give a short idea.";
             document.getElementById('aiPromptText').focus();
         } else {
-            document.getElementById('step4_Manual').classList.add('active');
+            document.getElementById('step5_Manual').classList.add('active');
             document.getElementById('stepTitle').textContent = "Write Your Story";
             document.getElementById('stepSub').textContent = "Type the full script.";
             document.getElementById('manualPromptText').focus();
@@ -409,6 +535,17 @@ function submitAI() {
         return;
     }
     document.getElementById('createForm').insertAdjacentHTML('beforeend', '<input type="hidden" name="mode" value="AI">');
+    submitFinal(text);
+}
+
+
+function submitStudy() {
+    const text = document.getElementById('studyPromptText').value.trim();
+    if (!text) {
+        alert("Please enter a topic to study.");
+        return;
+    }
+    document.getElementById('createForm').insertAdjacentHTML('beforeend', '<input type="hidden" name="mode" value="Study">');
     submitFinal(text);
 }
 
