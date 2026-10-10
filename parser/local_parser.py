@@ -464,7 +464,10 @@ def parse_script(script: str, mode: str = "auto") -> SceneSpec:
     if mode in ("llm", "auto"):
         try:
             from parser.llm_parser import parse_with_llm
-            return parse_with_llm(script)
+            res = parse_with_llm(script)
+            if res.background_scene == "none":
+                res.background_scene = _score_ambient(script)
+            return res
         except Exception as e:
             print(
                 f"[Warning] LLM Parser failed, falling back to local: "

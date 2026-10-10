@@ -18,7 +18,7 @@ def parse_with_llm(script: str) -> SceneSpec:
     Background_scene must be one of: {taxonomy_str}.
     
     INSTRUCTIONS:
-    1. If a 'Context:' or 'Characters:' header exists, use it to infer character genders and the best background_scene.
+    1. Infer the best background_scene from the script content (context headers or dialogue text). If no scene fits well, use 'none'.
     2. Infer gender from character names if not explicitly stated.
     3. Infer emotion from the dialogue text if not explicitly stated. **Crucial: Emotion must STRICTLY be one of: 'neutral', 'happy', 'sad', 'angry', 'fear', 'surprise', or 'disgust'. Do NOT use any other words like 'urgent' or 'concerned'.**
     4. Set 'pause_after_ms' intelligently based on punctuation.

@@ -94,7 +94,7 @@ def mix_scene(scene: SceneSpec, tts_results: list[TTSResult], ambient_path: str 
     
     # 3. Ambient & Music Loop & Duck
     bg_mix = np.zeros(total_samples)
-    for path, target_lufs in [(ambient_path, -32.0), (music_path, -34.0)]:
+    for path, target_lufs in [(ambient_path, -24.0), (music_path, -26.0)]:
         if path and Path(path).exists():
             audio, _ = librosa.load(path, sr=sr, mono=True)
             if len(audio) > 0:

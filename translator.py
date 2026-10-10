@@ -48,6 +48,5 @@ def translate_text(text: str, target_lang: str) -> str:
 def apply_translation(scene) -> None:
     """Translates dialogue text in the scene to the target language if required."""
     for d in scene.dialogues:
-        if scene.language in ['kn', 'hi']:
-            if detect_lang(d.text) == 'en':
-                d.text = translate_text(d.text, scene.language)
+        if detect_lang(d.text) != scene.language:
+            d.text = translate_text(d.text, scene.language)

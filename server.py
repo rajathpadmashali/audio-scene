@@ -157,13 +157,25 @@ def create():
                 full_prompt = f"Write a scene in {language}, in a {theme} style. {prompt}"
                 script_text = generate_script_from_prompt(full_prompt)
             
+            # Map full language names to codes
+            lang_code_map = {'English': 'en', 'Hindi': 'hi', 'Kannada': 'kn'}
+            lang_code = lang_code_map.get(language, 'en')
+
             # 2. Parse Script
             scene = parse_script(script_text, 'auto')
+            
+            # If the user manually wrote the script, override the language with the dropdown choice
+            if mode == 'Manual':
+                scene.language = lang_code
+                
             apply_translation(scene)
             
             # Ensure the selected theme is in the background_scene so models.py infers the correct folder
-            if theme.lower() not in scene.background_scene.lower():
-                scene.background_scene = f"{theme.title()} - {scene.background_scene}"
+            # Only do this if we are not relying purely on taxonomy labels for ambient clip lookups.
+            # Wait, get_ambient_clip uses ESC50_TAXONOMY labels strictly! So prepending theme breaks get_ambient_clip!
+            # We should keep scene.background_scene clean for get_ambient_clip to work.
+            
+            clean_bg = scene.background_scene
             
             # 3. Generate TTS
             tts_results = []
@@ -179,14 +191,20 @@ def create():
             # Handle manual ambient selection
             ambient_selection = request.form.get('ambient', 'AI Recommended')
             if ambient_selection == 'AI Recommended':
-                ambient_path = get_ambient_clip(scene.background_scene)
+                ambient_path = get_ambient_clip(clean_bg)
             elif ambient_selection == 'None':
                 ambient_path = None
             else:
-                ambient_path = get_ambient_clip(ambient_selection)
+                # ambient_selection here is probably a friendly name from UI.
+                # Assuming UI sends valid labels, but if not we should ensure valid.
+                ambient_path = get_ambient_clip(ambient_selection.lower().replace(" ", "_"))
                 
             music_path = get_music_clip(dominant)
             
+            # Ensure the selected theme is in the background_scene so models.py infers the correct folder
+            if theme.lower() not in scene.background_scene.lower():
+                scene.background_scene = f"{theme.title()} - {scene.background_scene}"
+                
             uid = str(uuid.uuid4())
             wav_filename = f"{uid}.wav"
             json_filename = f"{uid}.json"
